@@ -1,19 +1,76 @@
-Create a virtual environment: 
-
-1) CD into the directory of your project
-2) python3 -m venv [name of environment folder]
-3) Select the python interpreter in VS Code: 
---View -> Command Palette -> Python:Select Interpreter -> [name of virtual environment folder]\Scripts\python.exe 
+Project Title: Comment Sentiment Analyzer
 
 
-Virtual Environment Installations: 
-pip install --upgrade google-api-python-client
-pip install python-dotenv
-pip install openpyxl
+----------
+Table of Contents: 
+1. Project Description
+2. Requirements
+3. Installation
+4. How to Run the Program
+5. Troubleshooting
+6. FAQ
+7. Credits
 
 
-Create a .env file with the necessary Credentials (line 7 of the program)
+----------
+1. Project Description
+
+This Python script intakes a Lex Fridman podcast episode, and outputs all of the episode's YouTube and Reddit comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). It uses the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
 
 
-Troubleshooting: 
--make sure .xlsx file is closed before running the program
+----------
+2. Requirements
+
+Libraries: 
+-Python 3.9 or higher
+-googleapiclient
+-praw
+-os
+-dotenv
+-transformers-cli
+-huggingface-cli
+Other:
+-a Google account
+-a YouTube API key
+-a Reddit account
+-a Reddit API key
+
+
+----------
+3. Installation:
+
+-Install Python 3.9.13 or higher
+-Create Virtual Environment (https://www.youtube.com/watch?v=APOPm01BVrk&t=0s) : 
+--open terminal
+--cd into folder
+--create Python environment: python -m venv project_yt_api
+--activate the virtual environment: project_yt_api\Scripts\activate.bat
+--install required libraries
+
+
+----------
+4. How to Run the Program: 
+
+Double click the 'run_script_1.bat' file
+-enter the desired podcast episode number in the cell B2
+-save and close the file
+Double click the 'run_script_2.bat' file
+-wait for the new file 'Comment Analyzer - Complete.xlsx' to appear in the same directory, and information will appear in the terminal
+
+
+----------
+5. Troubleshooting: 
+* The excel files cannot be open while running the script
+
+
+----------
+6. FAQ
+
+-This script will only provide comments for podcast episodes on the Lex Fridman channel, and comments from the Lex Fridman subreddit
+
+
+----------
+7. Credits
+
+Michelle Flandin
+
