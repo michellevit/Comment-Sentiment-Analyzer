@@ -67,6 +67,7 @@ Double click the 'run_script_2.bat' file
 6. FAQ
 
 -This script will only provide comments for podcast episodes on the Lex Fridman channel, and comments from the Lex Fridman subreddit
+-If no podcast episode is entered into original 'Comment Analyzer.xlsx' file (created upon running 'run_script_1.bat'), then this script will automatically get the comments from the latest podcast episode added to the channel
 
 
 ----------
