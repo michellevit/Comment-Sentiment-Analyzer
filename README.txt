@@ -40,7 +40,7 @@ Other:
 3. Installation:
 
 -Install Python 3.9.13 or higher
--Create Virtual Environment (https://www.youtube.com/watch?v=APOPm01BVrk&t=0s) : 
+-Create Virtual Environment (https://www.youtube.com/watch?v=APOPm01BVrk&t=0s): 
 --open terminal
 --cd into folder
 --create Python environment: python -m venv project_yt_api
