@@ -15,25 +15,23 @@ Table of Contents:
 ----------
 1. Project Description
 
-This Python script intakes a Lex Fridman podcast episode, and outputs all of the episode's YouTube and Reddit comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). It uses the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
-
+This Python script intakes a YouTube video link, and outputs all of the video's YouTube comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). The sentiment analysis done by the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
 
 ----------
 2. Requirements
 
 Libraries: 
-- Python 3.9 or higher
+- Python 3.9
 - googleapiclient
-- praw
+- openpyxl
 - os
 - dotenv
-- transformers-cli
-- huggingface-cli
+- transformers
+- tensorflow
+- huggingface-hub
 Other:
 - Google account
 - YouTube API key
-- Reddit account
-- Reddit API key
 
 
 ----------
@@ -43,9 +41,22 @@ Other:
   - Click the green 'Code' button
   - Click 'Download ZIP'
   - Unzip the file (find the folder in your computer and right-click 'Extract all')
--Install Python 3.9.13 to your computer
+- Install Python 3.9 to your computer
   - If it does not work, make sure it is added to your system's PATH
--Create a Virtual environment
+  - Note: It must be version 3.9 for Tensorflow to work
+- Install Rust
+  - Download Visual Studio C++ Build Tools (pre-req for Rust)
+    - https://visualstudio.microsoft.com/downloads/
+    - Under "All downloads" > "Tools for Visual Studio 2019", find "Build Tools for Visual Studio 2019" and download it. (You can also choose a newer version if available.)
+    - Run the installer
+      - In the installer, select the "C++ build tools" workload
+      - Make sure to include the latest versions of MSVCv142 - VS 2019 C++ x64/x86 build tools and Windows 10 SDK
+      - Restart the computer
+In the installer, select the "C++ build tools" workload.
+    - https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  - https://www.rust-lang.org/learn/get-started
+  - If it does not work, make sure it is added to your system's PATH
+- Create a Virtual environment
   - https://www.youtube.com/watch?v=APOPm01BVrk&ab_channel=CoreySchafer
   - Open a new terminal and navigate to folder you want to save your virtual env to
   - Make sure pip is installed (to check - run: python -m pip --version)
@@ -57,9 +68,10 @@ Other:
   - Activate the virtual environment - run: C:\Users\Michelle\.virtualenvs\Comment-Sentiment-Analyzer-Virtual-Env\Scripts\Activate.ps1
   - Run: 
     pip install --upgrade google-api-python-client
-    pip install praw
+    pip install openpyxl
     pip install python-dotenv
     pip install transformers
+    pip install tensorflow
     pip install huggingface-hub
 - Open the 'env.txt' file in VSCode (or a text/code editor)
   - Fill in all the 'youtube_api_key' line
@@ -80,24 +92,22 @@ Other:
 4. How to Run the Program: 
 
 - Double click the 'run_script_1.bat' file
- - Enter the desired podcast episode number in the cell B2
+  - Open the newly created 'Comment-Analyzer.xlsx' file 
+  - Enter the YouTube video link in the cell B2
 - Save and close the file
 - Double click the 'run_script_2.bat' file
- - Open the newly created file 'Comment Analyzer - Complete.xlsx' (should appear in the same directory)
-
+  - Once it is ready, it will be renamed: "YouTube-Comment-Analyzer-Complete.xlsx"
+  * Note: on average this script takes 3 seconds per comment, so you may need to wait
 
 
 ----------
 5. Troubleshooting: 
-* The excel files cannot be open while running the script
+- The excel files cannot be open while running the script
 
 
 ----------
 6. FAQ
-
--This script will only provide comments for podcast episodes on the Lex Fridman channel, and comments from the Lex Fridman subreddit
--If no podcast episode is entered into original 'Comment Analyzer.xlsx' file (created upon running 'run_script_1.bat'), then this script will automatically get the comments from the latest podcast episode added to the channel
-
+-This script can be modified to pull comments from reddit, but it requires some changes to be made to the 'comment-analyzer-2.py' file
 
 ----------
 7. Credits

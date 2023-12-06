@@ -1,331 +1,207 @@
 import os
-from re import X
-from dotenv import load_dotenv
-from openpyxl import Workbook, load_workbook
+import re
+from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Alignment, Font
 from googleapiclient.discovery import build
-from transformers import pipeline
-import praw
-from datetime import datetime, date, timedelta
-# import tweepy
+from transformers import TFAutoModelForSequenceClassification, RobertaTokenizer, pipeline
+from dotenv import load_dotenv
+import tensorflow as tf 
+import warnings
 
 
-# NOTES FOR BEFORE RUNNING THE PROGRAM
-# To avoid exceeding API requests to Youtube
-# There is test data instead of real-time API data
-# When running the program for real:
-# Remove commented code under titles: "*** ACTUAL DATA FROM YOUTUBE API ***"
-# And comment out code under titles: "*** FAKE DATA FOR TESTING PURPOSES ***"
+# Use test data in development mode to avoid going over API call limit
+DEVELOPMENT_MODE = True 
 
-
-# CREDENTIALS (in .env file, and ignored by git with .gitignore file):
+# CREDENTIALS (in .env file):
 load_dotenv()
-yt_api_key = os.getenv("youtube_api_key")
-# reddit_client_id = os.getenv("reddit_client_id")
-# reddit_client_secret = os.getenv("reddit_client_secret")
-# reddit_username = os.getenv("reddit_username")
-# reddit_password = os.getenv("reddit_password")
-# twitter_api_key = os.getenv("twitter_api_key")
-# twitter_api_key_secret = os.getenv("twitter_api_key_secret")
-# twitter_bearer_token = os.getenv("twitter_bearer_token")
-# twitter_access_token = os.getenv("twitter_access_token")
-# twitter_access_token_secret = os.getenv("twitter_access_token_secret")
+yt_api_key = os.getenv("YOUTUBE_API_KEY")
+
+
+# Avoid error messages in console: 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging
+tf.get_logger().setLevel('ERROR')  # Suppress deprecated function warnings
 
 
 def main():
-    print("This may take 1-10 minutes (takes 3 seconds per comment)")
-    wb = load_workbook("Comment Analyzer.xlsx")
+    try:
+        model = TFAutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+        tokenizer = RobertaTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+        classifier = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
+    except Exception as e:
+        print(f"Error loading model or tokenizer: {e}")
+        return
+    try:
+        wb = load_workbook("YouTube-Comment-Analyzer-Setup.xlsx")
+    except FileNotFoundError:
+        print("File 'YouTube-Comment-Analyzer-Setup.xlsx' not found. Please check the file path.")
+        return
     ws = wb.active
     youtube = build("youtube", "v3", developerKey=yt_api_key)
-    video_data = get_episode_data(ws, youtube)
-    video_title = video_data[0]
-    yt_video_id = video_data[1]
-    yt_video_date = video_data[2]
-    episode_number = video_data[3]
-    podcast_guest = video_title.partition(":")[0]
-    prep_comment_ws(ws, wb)
-    get_yt_comments(youtube, yt_video_id, ws, token="", x=0, row_number=2)
-    # get_reddit_comments(video_title, ws)
-    # get_twitter_comments(video_title, yt_video_date, ws)
-    totals = sort_comments_by_sentiment(wb, ws)
+    url = ws["B1"].value
+    max_results = int(ws["B2"].value)
+    estimated_time = 3 * max_results / 60
+    print("-----------------")
+    print("-----------------")
+    print(f"Your data is currently being analyzed. This will take up to {estimated_time:.2f} minutes.")
+    print("-----------------")
+    if not isinstance(url, str):
+        print("Invalid URL in Excel file. Please check the content of B1 cell.")
+        return
+    yt_video_id = extract_youtube_id(url)
+    if DEVELOPMENT_MODE:
+        yt_video_title = url
+    else:
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging
+        tf.get_logger().setLevel('ERROR')  # Suppress deprecated function warnings
+        warnings.filterwarnings('ignore')
+        video_response = youtube.videos().list(
+            part="snippet",
+            id=yt_video_id
+        ).execute()
+        yt_video_title = video_response["items"][0]["snippet"]["title"]
+    prep_sentiment_ws(wb, yt_video_title, "Positive")
+    prep_sentiment_ws(wb, yt_video_title, "Neutral")
+    prep_sentiment_ws(wb, yt_video_title, "Negative")
+    if DEVELOPMENT_MODE:
+        yt_video_title = url
+        get_mock_yt_comments(wb, classifier)
+    else:
+        get_yt_comments(youtube, yt_video_id, max_results, wb, classifier, token="")
+    totals = get_totals(wb)
     total_positive = totals[0]
     total_neutral = totals[1]
     total_negative = totals[2]
-    wb.save(filename="Comment Analyzer - Complete.xlsx")
-    print("Podcast Episode #", episode_number)
-    print("Podcast Guest: ", podcast_guest)
-    print("\n")
+    # if not DEVELOPMENT_MODE:
+    #     os.remove("YouTube-Comment-Analyzer-Setup.xlsx")
     total_comments = total_positive + total_neutral + total_negative
     percent_positive = str(total_positive * 100 / total_comments) + "%"
     percent_neutral = str(total_neutral * 100 / total_comments) + "%"
     percent_negative = str(total_negative * 100 / total_comments) + "%"
+    prepare_overview_sheet(wb, yt_video_title, totals, percent_positive, percent_neutral, percent_negative)
+    print("-----------------")
     print("Total Positive Comments: ", total_positive, " (", percent_positive, ")")
     print("Total Neutral Comments: ", total_neutral, " (", percent_neutral, ")")
     print("Total Negative Comments: ", total_negative, " (", percent_negative, ")")
+    print("-----------------")
+    print("Analysis complete.")
+    print("To view complete results - open file: YouTube-Comment-Analyzer-Complete.xlsx")
+    wb.save(filename="YouTube-Comment-Analyzer-Complete.xlsx")
+    file_path = 'YouTube-Comment-Analyzer-Complete.xlsx'
+    open_file(file_path)
 
 
-def get_episode_data(ws, youtube):
-    episode_number = ws["B1"].value
-    # If no podcast episode is specified, use the latest episode
-    if episode_number == None:
-        latest_episode_data = get_latest_episode(youtube)
-        episode_number = str(latest_episode_data[0])
-        yt_video_id = latest_episode_data[1]
-        video_title = latest_episode_data[2]
-        yt_video_date = latest_episode_data[3]
+def extract_youtube_id(url):
+    regex = r"(?:v=|youtu\.be/)([^&]+)"
+    match = re.search(regex, url)
+    if match:
+        return match.group(1)
     else:
-        # # *** ACTUAL DATA FROM YOUTUBE API ***
-        search_response = (
-            youtube.search()
-            .list(
-                part="snippet",
-                maxResults=1,
-                q="Lex Fridman Podcast #" + str(episode_number),
-            )
-            .execute()
-        )
-        yt_video_id = search_response["items"][0]["id"]["videoId"]
-        video_response = youtube.videos().list(part="snippet", id=yt_video_id).execute()
-        video_title = video_response["items"][0]["snippet"]["title"]
-        yt_video_date = search_response["items"][0]["snippet"]["publishedAt"][0:10]
-        # *** END OF ACTUAL DATA ***
-        # *** FAKE DATA FOR TESTING PURPOSES ***
-        # yt_video_id = "ZFntEFXKDHM"
-        # video_title = "Kate Darling: Social Robots, Ethics, Privacy and the Future of MIT | Lex Fridman Podcast #329"
-        # episode_number = "329"
-        # yt_video_date = "2022-10-15"
-        # *** END OF FAKE DATA ***
-    return (video_title, yt_video_id, yt_video_date, episode_number)
+        return "Invalid YouTube URL"
 
 
-def get_latest_episode(youtube):
-    # *** ACTUAL DATA FROM YOUTUBE API ***
-    lex_fridman_yt_channel_id = "UCSHZKyawb77ixDdsGog4iWA"
-    search_response = (
-        youtube.search()
-        .list(
-            part="id, snippet",
-            type="video",
-            order="date",
-            channelId=lex_fridman_yt_channel_id,
-            maxResults=5,
-        )
-        .execute()
-    )
-    for x in range(4):
-        yt_video_id = search_response["items"][x]["id"]["videoId"]
-        video_response = youtube.videos().list(part="snippet", id=yt_video_id).execute()
-        video_title = video_response["items"][0]["snippet"]["title"]
-        yt_video_date = str(search_response["items"][x]["snippet"]["publishedAt"])[0:10]
-        if "Lex Fridman Podcast" in video_title:
-            location_of_hash = video_title.find("#")
-            episode_number = ""
-            for x in range(1, 5):
-                if (location_of_hash + x) < len(video_title):
-                    if video_title[location_of_hash + x].isnumeric():
-                        number_to_add = video_title[location_of_hash + x]
-                        episode_number += number_to_add
-            episode_number = episode_number
-            break
-    # # *** END OF ACTUAL DATA ***
-    # *** FAKE DATA FOR TESTING PURPOSES ***
-    # yt_video_id = "ZFntEFXKDHM"
-    # video_title = "Kate Darling: Social Robots, Ethics, Privacy and the Future of MIT | Lex Fridman Podcast #329"
-    # episode_number = "329"
-    # yt_video_date = '2022-10-15'
-    # *** END OF FAKE DATA ***
-    return (episode_number, yt_video_id, video_title, yt_video_date)
-
-
-def prep_comment_ws(ws, wb):
-    ws.title = "Positive Comments"
+def prep_sentiment_ws(wb, yt_video_title, sheet_type):
+    ws = wb.create_sheet("Comments")
+    ws.title = f"{sheet_type} Comments"
     ws.column_dimensions["A"].width = 15
-    ws["A1"].fill = PatternFill(start_color="FFFF00", fill_type="solid")
-    ws["A1"] = "Date"
-    ws["A1"].alignment = Alignment(horizontal="center")
-    ws["A1"].font = Font(bold=True)
-    ws["A2"].fill = PatternFill(fill_type="none")
     ws.column_dimensions["B"].width = 15
-    ws["B1"].fill = PatternFill(start_color="FFFF00", fill_type="solid")
-    ws["B1"].value = "Source"
-    ws["B1"].alignment = Alignment(horizontal="center")
-    ws["B1"].font = Font(bold=True)
     ws.column_dimensions["C"].width = 15
-    ws["C1"].fill = PatternFill(start_color="FFFF00", fill_type="solid")
-    ws["C1"].value = "Sentiment"
-    ws["C1"].alignment = Alignment(horizontal="center")
-    ws["C1"].font = Font(bold=True)
-    ws.column_dimensions["D"].width = 10
-    ws["D1"].fill = PatternFill(start_color="FFFF00", fill_type="solid")
-    ws["D1"] = "Likes"
-    ws["D1"].alignment = Alignment(horizontal="center")
-    ws["D1"].font = Font(bold=True)
-    ws.column_dimensions["E"].width = 20
-    ws["E1"].fill = PatternFill(start_color="FFFF00", fill_type="solid")
-    ws["E1"] = "Username"
-    ws["E1"].alignment = Alignment(horizontal="center")
-    ws["E1"].font = Font(bold=True)
-    ws.column_dimensions["F"].width = 200
-    ws["F1"].fill = PatternFill(start_color="FFFF00", fill_type="solid")
-    ws["F1"] = "Comment"
-    ws["F1"].font = Font(bold=True)
-    # ws.column_dimensions['G'].width = 75
-    # ws['G1'].fill = PatternFill(start_color="FFFF00", fill_type="solid")
-    # ws['G1'] = "Replies"
-    # ws['G1'].font = Font(bold=True)
-    neutral_ws = wb.copy_worksheet(ws)
-    neutral_ws.title = "Neutral Comments"
-    negative_ws = wb.copy_worksheet(ws)
-    negative_ws.title = "Negative Comments"
+    ws.column_dimensions["D"].width = 15
+    ws.column_dimensions["E"].width = 200
+    cell_A1 = ws['A1']
+    cell_A1.value = "YouTube Video:"
+    cell_A1.alignment = Alignment(horizontal="left")
+    cell_A1.fill = PatternFill(start_color="FF0000", fill_type="solid")
+    cell_A1.font = Font(color="FFFFFF", bold=True)
+    ws.merge_cells('B1:E1')
+    title_cell = ws['B1']
+    title_cell.alignment = Alignment(horizontal="left")
+    title_cell.value = yt_video_title
+    title_cell.fill = PatternFill(start_color="FF0000", fill_type="solid")
+    title_cell.font = Font(color="FFFFFF")
+    headers = ["Comment Date", "Sentiment", "Likes", "Username", "Comment"]
+    for i, header in enumerate(headers, 1):
+        cell = ws.cell(row=2, column=i, value=header)
+        cell.fill = PatternFill(start_color="D0D0D0", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center" if i != 5 else "left") 
+        cell.font = Font(bold=True)
 
 
-def get_yt_comments(youtube, yt_video_id, ws, token, x, row_number):
-    request = youtube.commentThreads().list(
-        part="snippet,replies", videoId=yt_video_id, pageToken=token
-    )
-    search_response = request.execute()
-    y = 0
-    for item in search_response["items"]:
-        username = item["snippet"]["topLevelComment"]["snippet"]["authorDisplayName"]
-        date = item["snippet"]["topLevelComment"]["snippet"]["publishedAt"][0:10]
-        comment = item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
-        like_count = item["snippet"]["topLevelComment"]["snippet"]["likeCount"]
-        if username != "Lex Fridman":
-            sentiment_score = score_comment(comment)
-        # reply_count = item['snippet']['totalReplyCount']
-        # replies = []
-        # x = 1
-        # if reply_count > 0:
-        #     print(item['replies']['comments'])
-        #     for reply in item['replies']['comments']:
-        #         reply_text = reply['snippet']['textDisplay']
-        #         replyAuthor = reply['snippet']['authorDisplayName']
-        #         replyLikes = reply['snippet']['likeCount']
-        #         formattedReply = "Reply #" + str(x) + " (" + str(replyLikes) + " Likes): " + reply_text + " - " + replyAuthor
-        #         replies.append(formattedReply)
-        #         x = x + 1
-        #     replies = '\n'.join([str(elem) for elem in replies])
-        if username != "Lex Fridman":
-            cell_a = "A" + str(row_number)
-            cell_b = "B" + str(row_number)
-            cell_c = "C" + str(row_number)
-            cell_d = "D" + str(row_number)
-            cell_e = "E" + str(row_number)
-            cell_f = "F" + str(row_number)
-            cell_g = "G" + str(row_number)
-            ws[cell_a] = date
-            ws[cell_a].alignment = Alignment(horizontal="center")
-            ws[cell_b] = "YouTube"
-            ws[cell_b].alignment = Alignment(horizontal="center")
-            ws[cell_b].font = Font(color="FF0000")
-            ws[cell_c] = sentiment_score
-            ws[cell_c].alignment = Alignment(horizontal="center")
-            ws[cell_d] = like_count
-            ws[cell_d].alignment = Alignment(horizontal="center")
-            ws[cell_e] = username
-            ws[cell_e].alignment = Alignment(horizontal="center")
-            ws[cell_f] = comment
-            ws[cell_f].alignment = Alignment(wrap_text=True, shrink_to_fit=False)
-            # if len(replies) != 0:
-            #     ws[cell_g] = replies
-            #     ws[cell_g].alignment = Alignment(wrap_text=True, shrink_to_fit=False)
-            row_number = row_number + 1
-        x = x + 1
-    if "nextPageToken" in search_response:
-        token = search_response["nextPageToken"]
-        return get_yt_comments(youtube, yt_video_id, ws, token, x, row_number)
+
+def style_row(ws, row_num, sentiment):
+    font_colors = {
+        "Positive": "008000",
+        "Neutral": "787878",
+        "Negative": "FF0000"
+    }
+    font_color = font_colors.get(sentiment, "000000")
+    for col_num in range(1, 6):
+        cell = ws.cell(row=row_num, column=col_num)
+        cell.alignment = Alignment(horizontal="center" if col_num < 5 else "left")
+        if col_num == 2:
+            cell.font = Font(color=font_color, bold=True)
+        else:
+            cell.font = Font(color="000000", bold=False)
 
 
-# def get_reddit_comments(video_title, ws):
-#     ## Reddit Credentials
-#     reddit = praw.Reddit(
-#         client_id=reddit_client_id,
-#         client_secret=reddit_client_secret,
-#         user_agent="post bot",
-#         username=reddit_username,
-#         password=reddit_password,
-#     )
-#     subreddit_name = reddit.subreddit("lexfridman")
-#     post_search = subreddit_name.search(query=video_title, limit=1)
-#     for post in post_search:
-#         post_id = post
-#         found_post_title = post.title
-#     if found_post_title != video_title:
-#         print("Error: no reddit post matches the YouTube video title")
-#     else:
-#         row_number = ws.max_row + 1
-#         reddit_comments = reddit.submission(post_id).comments
-#         for comment in reddit_comments:
-#             username = str(comment.author)
-#             date = datetime.utcfromtimestamp(comment.created_utc).strftime(
-#                 "%Y-%m-%d %H:%M:%S"
-#             )[0:10]
-#             text = comment.body
-#             like_count = comment.ups
-#             # dislike_count = comment.downs
-#             sentiment_score = score_comment(text)
-#             cell_a = "A" + str(row_number)
-#             cell_b = "B" + str(row_number)
-#             cell_c = "C" + str(row_number)
-#             cell_d = "D" + str(row_number)
-#             cell_e = "E" + str(row_number)
-#             cell_f = "F" + str(row_number)
-#             cell_g = "G" + str(row_number)
-#             ws[cell_a] = date
-#             ws[cell_a].alignment = Alignment(horizontal="center")
-#             ws[cell_b] = "Reddit"
-#             ws[cell_b].alignment = Alignment(horizontal="center")
-#             ws[cell_b].font = Font(color="FF5700")
-#             ws[cell_c] = sentiment_score
-#             ws[cell_c].alignment = Alignment(horizontal="center")
-#             ws[cell_d] = like_count
-#             ws[cell_d].alignment = Alignment(horizontal="center")
-#             ws[cell_e] = username
-#             ws[cell_e].alignment = Alignment(horizontal="center")
-#             ws[cell_f] = text
-#             row_number = row_number + 1
+def get_mock_yt_comments(wb, classifier):
+    mock_comments = [
+        {"username": "User1", "date": "2021-01-01", "comment": "Great video!", "like_count": 5},
+        {"username": "User2", "date": "2021-01-02", "comment": "Very informative.", "like_count": 3},
+        {"username": "User3", "date": "2021-01-03", "comment": "Not great.", "like_count": 0},
+        {"username": "User4", "date": "2021-01-04", "comment": "It was ok.", "like_count": 0},
+        {"username": "User5", "date": "2020-01-04", "comment": "This video in on YouTube.", "like_count": 0},
+    ]
+    for comment_data in mock_comments:
+        sentiment = score_comment(comment_data["comment"], classifier)
+        append_comment_to_sheet(wb, comment_data, sentiment)
 
 
-# def get_twitter_comments(video_title, yt_video_date, ws):
-#     # Authenticate account with twitter api
-#     auth = tweepy.OAuthHandler(twitter_api_key, twitter_api_key_secret)
-#     auth.set_access_token(twitter_access_token, twitter_access_token_secret)
-#     api = tweepy.API(auth)
-#     user = api.get_user(screen_name="lexfridman")
-#     podcast_guest = video_title.partition(":")[0]
-#     yt_video_date = datetime.strptime(yt_video_date, "%Y-%m-%d").date()
-#     tweet_message = "Here's my conversation with " + podcast_guest
-#     twitter_api_max_date = date.today() - timedelta(days=6)
-#     if yt_video_date < twitter_api_max_date:
-#         print(
-#             "Error: twitter does not store date for more than a week -> cannot provide twitter comments for this episode"
-#         )
-#     else:
-#         search_results = api.search_tweets(
-#             q=tweet_message,
-#             count=1,
-#             result_type="popular",
-#             lang="en",
-#             include_entities=True,
-#         )
-#         tweet_id = search_results[0].id
-#         replies = []
-#         for tweet in tweepy.Cursor(
-#             api.search_tweets, q="to:" + "lexfridman", result_type="recent"
-#         ).items(10):
-#             if hasattr(tweet, "in_reply_to_status_id_str"):
-#                 if tweet.in_reply_to_status_id_str == tweet_id:
-#                     replies.append(tweet)
-#     for tweet in replies:
-#         print("To Do")
+def get_yt_comments(youtube, yt_video_id, max_results, wb, classifier, token=""):
+    try:
+        row_number = 3
+        while max_results > 0:
+            request = youtube.commentThreads().list(
+                part="snippet",
+                videoId=yt_video_id,
+                pageToken=token,
+                maxResults=100,
+                order="time", 
+                textFormat="plainText"
+            )
+            response = request.execute()
+            for item in response.get("items", []):
+                top_comment = item["snippet"]["topLevelComment"]["snippet"]
+                sentiment = score_comment(top_comment["textDisplay"], classifier)
+                comment_data = {
+                    "date": top_comment["publishedAt"][:10],
+                    "comment": top_comment["textDisplay"],
+                    "like_count": top_comment["likeCount"],
+                    "username": top_comment["authorDisplayName"]
+                }
+                append_comment_to_sheet(wb, comment_data, sentiment)
+                row_number += 1
+                max_results -= 1
+            token = response.get("nextPageToken", None)
+            if not token:
+                break 
+    except Exception as e:
+        print(f"Error fetching YouTube comments: {e}")
 
 
-def score_comment(comment):
-    classifier = pipeline(
-        "sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment"
-    )
-    classified = classifier(comment)
-    comment_score = classified[0]["label"]
+def append_comment_to_sheet(wb, comment_data, sentiment):
+    ws = wb[f'{sentiment} Comments']
+    row_num = ws.max_row + 1
+    ws.cell(row=row_num, column=1, value=comment_data["date"])
+    ws.cell(row=row_num, column=2, value=sentiment)
+    ws.cell(row=row_num, column=3, value=comment_data["like_count"])
+    ws.cell(row=row_num, column=4, value=comment_data["username"])
+    ws.cell(row=row_num, column=5, value=comment_data["comment"])
+    style_row(ws, row_num, sentiment)
+
+
+def score_comment(comment, classifier):
+    outputs = classifier(comment)
+    comment_score = outputs[0]["label"]
     if comment_score == "LABEL_0":
         return "Negative"
     elif comment_score == "LABEL_1":
@@ -336,80 +212,75 @@ def score_comment(comment):
         return "ERROR: could not classify comment"
 
 
-def sort_comments_by_sentiment(wb, ws):
-    sheets = wb.sheetnames
-    neutral_ws = wb[sheets[1]]
-    negative_ws = wb[sheets[2]]
-    rows = list(ws.iter_rows(min_row=2, max_row=ws.max_row))
-    rows = reversed(rows)
-    current_neutral_row = 2
-    current_negative_row = 2
-    total_positive = 0
-    total_neutral = 0
-    total_negative = 0
-    for row in rows:
-        sentiment_score = row[2].value
-        if sentiment_score == "Neutral":
-            total_neutral += 1
-            cell_a = "A" + str(current_neutral_row)
-            cell_b = "B" + str(current_neutral_row)
-            cell_c = "C" + str(current_neutral_row)
-            cell_d = "D" + str(current_neutral_row)
-            cell_e = "E" + str(current_neutral_row)
-            cell_f = "F" + str(current_neutral_row)
-            # cell_g = 'G' + str(current_neutral_row)
-            neutral_ws[cell_a] = row[0].value
-            neutral_ws[cell_a].alignment = Alignment(horizontal="center")
-            neutral_ws[cell_b] = row[1].value
-            neutral_ws[cell_b].alignment = Alignment(horizontal="center")
-            neutral_ws[cell_c] = row[2].value
-            neutral_ws[cell_c].alignment = Alignment(horizontal="center")
-            neutral_ws[cell_d] = row[3].value
-            neutral_ws[cell_d].alignment = Alignment(horizontal="center")
-            neutral_ws[cell_e] = row[4].value
-            neutral_ws[cell_e].alignment = Alignment(horizontal="center")
-            neutral_ws[cell_f] = row[5].value
-            # neutral_ws[cell_g] = row[6].value
-            if neutral_ws[cell_b].value == "YouTube":
-                neutral_ws[cell_b].font = Font(color="FF0000")
-            # if neutral_ws[cell_b].value == "Reddit":
-            #     neutral_ws[cell_b].font = Font(color="FF5700")
-            # if neutral_ws[cell_b].value == "Twitter":
-            #     neutral_ws[cell_b].font = Font(color="1DA1F2")
-            current_neutral_row += 1
-            ws.delete_rows(row[2].row, 1)
-        elif sentiment_score == "Negative":
-            total_negative += 1
-            cell_a = "A" + str(current_negative_row)
-            cell_b = "B" + str(current_negative_row)
-            cell_c = "C" + str(current_negative_row)
-            cell_d = "D" + str(current_negative_row)
-            cell_e = "E" + str(current_negative_row)
-            cell_f = "F" + str(current_negative_row)
-            # cell_g = 'G' + str(current_negative_row)
-            negative_ws[cell_a] = row[0].value
-            negative_ws[cell_a].alignment = Alignment(horizontal="center")
-            negative_ws[cell_b] = row[1].value
-            negative_ws[cell_b].alignment = Alignment(horizontal="center")
-            negative_ws[cell_c] = row[2].value
-            negative_ws[cell_c].alignment = Alignment(horizontal="center")
-            negative_ws[cell_d] = row[3].value
-            negative_ws[cell_d].alignment = Alignment(horizontal="center")
-            negative_ws[cell_e] = row[4].value
-            negative_ws[cell_e].alignment = Alignment(horizontal="center")
-            negative_ws[cell_f] = row[5].value
-            # negative_ws[cell_g] = row[6].value
-            if negative_ws[cell_b].value == "YouTube":
-                negative_ws[cell_b].font = Font(color="FF0000")
-            # elif negative_ws[cell_b].value == "Reddit":
-            #     negative_ws[cell_b].font = Font(color="FF5700")
-            # elif negative_ws[cell_b].value == "Twitter":
-            #     negative_ws[cell_b].font = Font(color="1DA1F2")
-            current_negative_row += 1
-            ws.delete_rows(row[2].row, 1)
-        else:
-            total_positive += 1
-    return (total_positive, total_neutral, total_negative)
+def get_totals(wb):
+    totals = {'Positive': 0, 'Neutral': 0, 'Negative': 0}
+    for sentiment in totals.keys():
+        ws = wb[f'{sentiment} Comments']
+        totals[sentiment] = max(ws.max_row - 2, 0)
+    return [totals['Positive'], totals['Neutral'], totals['Negative']]
+
+
+def prepare_overview_sheet(wb, yt_video_title, totals, percent_positive, percent_neutral, percent_negative):
+    ws = wb["Setup"]
+    ws.title = "Overview"
+    # Unmerge any merged cells
+    merged_cells_ranges = [merged_cell_range.coord for merged_cell_range in ws.merged_cells.ranges]
+    for merged_cell_range in merged_cells_ranges:
+        ws.unmerge_cells(merged_cell_range)
+    # Clear all cells in the sheet
+    for row in ws.iter_rows(min_row=3):
+        for cell in row:
+            cell.value = None
+            if cell.has_style:
+                cell.font = Font()
+                cell.fill = PatternFill()
+                cell.alignment = Alignment()
+    ws.column_dimensions["A"].width = 20
+    ws.column_dimensions["B"].width = 10
+    ws.column_dimensions["C"].width = 10
+    ws.column_dimensions["D"].width = 10
+    ws['A1'].fill = PatternFill(start_color="FF0000", fill_type="solid")
+    ws['A1'] = "YouTube Video:"
+    ws['B1'] = yt_video_title
+    ws['A2'].fill = PatternFill(start_color="D0D0D0", fill_type="solid")
+    ws['A2'].font = Font(color="000000", bold=True)
+    ws['A2'] = "Comments Analyzed:"
+    ws['B2'].alignment = Alignment(horizontal="center")
+    ws['B2'] = totals[0] + totals[1] + totals[2]
+    ws['A4'].fill = PatternFill(start_color="008000", fill_type="solid")
+    ws['A4'].font = Font(color="FFFFFF", bold=True)
+    ws['A4'] = "Positive Comments:"
+    ws['B4'].alignment = Alignment(horizontal="center")
+    ws['B4'].font = Font(color="008000", bold=True)
+    ws['B4'] = totals[0]
+    ws['C4'].alignment = Alignment(horizontal="center")
+    ws['C4'].font = Font(color="008000", bold=True)
+    ws['C4'] = percent_positive
+    ws['A5'].fill = PatternFill(start_color="787878", fill_type="solid")
+    ws['A5'].font = Font(color="FFFFFF", bold=True)
+    ws['A5'] = "Neutral Comments:"
+    ws['B5'].alignment = Alignment(horizontal="center")
+    ws['B5'].font = Font(color="787878", bold=True)
+    ws['B5'] = totals[1]
+    ws['C5'].alignment = Alignment(horizontal="center")
+    ws['C5'].font = Font(color="787878", bold=True)
+    ws['C5'] = percent_neutral
+    ws['A6'].fill = PatternFill(start_color="C70039", fill_type="solid")
+    ws['A6'].font = Font(color="FFFFFF", bold=True)
+    ws['A6'] = "Negative Comments:"
+    ws['B6'].alignment = Alignment(horizontal="center")
+    ws['B6'].font = Font(color="C70039", bold=True)
+    ws['B6'] = totals[2]
+    ws['C6'].alignment = Alignment(horizontal="center")
+    ws['C6'].font = Font(color="C70039", bold=True)
+    ws['C6'] = percent_negative
+
+
+def open_file(path):
+    if os.name == 'nt':  # Windows
+        os.startfile(path)
+    elif os.name == 'posix':  # macOS, Linux
+        subprocess.run(['open', path], check=True)
 
 
 # Run comment analyzer 2
