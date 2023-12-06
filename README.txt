@@ -1,4 +1,4 @@
-Project Title: Comment Sentiment Analyzer
+Project Title: YouTube Comment Sentiment Analyzer
 
 
 ----------
@@ -8,14 +8,14 @@ Table of Contents:
 3. Installation
 4. How to Run the Program
 5. Troubleshooting
-6. FAQ
-7. Credits
+6. Credits
 
 
 ----------
 1. Project Description
 
 This Python script intakes a YouTube video link, and outputs all of the video's YouTube comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). The sentiment analysis done by the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
+
 
 ----------
 2. Requirements
@@ -91,33 +91,30 @@ In the installer, select the "C++ build tools" workload.
 
 
 ----------
-4. How to Run the Program: 
+4. How to Run the Program:
 
 - Double click the 'run_script_1.bat' file
-  - Open the newly created 'Comment-Analyzer.xlsx' file 
-  - Enter the YouTube video link in the cell B2
-- Save and close the file
+  - Open the newly created 'YouTube-Comment-Analyzer-Setup.xlsx' file
+  - Enter the YouTube video link in the cell B1
+  - Adjust the B2 cell value to analyze more/less comments 
+    * Note: comment analysis takes ~3 seconds per comment
+  - Save and close the file
 - Double click the 'run_script_2.bat' file
   - Once it is ready, it will be renamed: "YouTube-Comment-Analyzer-Complete.xlsx"
-  * Note: on average this script takes 3 seconds per comment, so you may need to wait
   * Note: replies to comments will not be recorded
   * Note: only english comments will be recorded
+  * Note: the most recent comments will be returned first
 
 
 ----------
 5. Troubleshooting: 
 - The excel files cannot be open while running the script
+- Comment analysis takes ~3 seconds per comment, so you may need to wait
 
-
-----------
-6. FAQ
-  - On average this script takes 3 seconds per comment, so you may need to wait
-  - Replies to comments will not be recorded
-  - Only english comments will be recorded
 
 
 ----------
-7. Credits
+6. Credits
 
 Michelle Flandin
 

@@ -39,7 +39,7 @@ def main():
     estimated_time = 3 * max_results / 60
     print("-----------------")
     print("-----------------")
-    print(f"Your data is currently being analyzed. This will take up to {estimated_time:.2f} minutes.")
+    print(f"Your data is currently being analyzed. This may take up to {estimated_time:.2f} minutes.")
     print("-----------------")
     if not isinstance(url, str):
         print("Invalid URL in Excel file. Please check the content of B1 cell.")
@@ -68,8 +68,8 @@ def main():
     total_positive = totals[0]
     total_neutral = totals[1]
     total_negative = totals[2]
-    # if not DEVELOPMENT_MODE:
-    #     os.remove("YouTube-Comment-Analyzer-Setup.xlsx")
+    if not DEVELOPMENT_MODE:
+        os.remove("YouTube-Comment-Analyzer-Setup.xlsx")
     total_comments = total_positive + total_neutral + total_negative
     if total_comments != 0:
         percent_positive = "{:.1f}%".format(total_positive * 100 / total_comments)
@@ -87,6 +87,8 @@ def main():
     print("-----------------")
     print("Analysis complete.")
     print("To view complete results - open file: YouTube-Comment-Analyzer-Complete.xlsx")
+    ws.sheet_view.selection[0].activeCell = 'B1'  
+    ws.sheet_view.selection[0].sqref = 'B1'
     wb.save(filename="YouTube-Comment-Analyzer-Complete.xlsx")
     file_path = 'YouTube-Comment-Analyzer-Complete.xlsx'
     open_file(file_path)
@@ -103,12 +105,12 @@ def extract_youtube_id(url):
 
 def prep_sentiment_ws(wb, yt_video_title, sheet_type):
     ws = wb.create_sheet("Comments")
-    ws.title = f"{sheet_type} Comments"
+    ws.title = f"{sheet_type}"
     ws.column_dimensions["A"].width = 15
     ws.column_dimensions["B"].width = 15
     ws.column_dimensions["C"].width = 15
     ws.column_dimensions["D"].width = 15
-    ws.column_dimensions["E"].width = 200
+    ws.column_dimensions["E"].width = 50
     cell_A1 = ws['A1']
     cell_A1.value = "YouTube Video:"
     cell_A1.alignment = Alignment(horizontal="left")
@@ -202,7 +204,7 @@ def get_yt_comments(youtube, yt_video_id, max_results, wb, classifier, token="")
 
 
 def append_comment_to_sheet(wb, comment_data, sentiment):
-    ws = wb[f'{sentiment} Comments']
+    ws = wb[f'{sentiment}']
     row_num = ws.max_row + 1
     ws.cell(row=row_num, column=1, value=comment_data["date"])
     ws.cell(row=row_num, column=2, value=sentiment)
@@ -228,7 +230,7 @@ def score_comment(comment, classifier):
 def get_totals(wb):
     totals = {'Positive': 0, 'Neutral': 0, 'Negative': 0}
     for sentiment in totals.keys():
-        ws = wb[f'{sentiment} Comments']
+        ws = wb[f'{sentiment}']
         totals[sentiment] = max(ws.max_row - 2, 0)
     return [totals['Positive'], totals['Neutral'], totals['Negative']]
 
@@ -255,7 +257,7 @@ def prepare_overview_sheet(wb, yt_video_title, totals, percent_positive, percent
     ws['A1'].fill = PatternFill(start_color="FF0000", fill_type="solid")
     ws['A1'] = "YouTube Video:"
     ws['B1'] = yt_video_title
-    ws['A2'].fill = None
+    ws['A2'].fill = PatternFill()
     ws['A2'].font = Font(color="000000", bold=True)
     ws['A2'] = "Comments Analyzed:"
     ws['B2'].alignment = Alignment(horizontal="center")

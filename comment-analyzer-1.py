@@ -1,7 +1,7 @@
 import os
 import subprocess
 from openpyxl import Workbook
-from openpyxl.styles import PatternFill, Font
+from openpyxl.styles import PatternFill, Font, Alignment
 
 
 def main():
@@ -14,7 +14,7 @@ def create_workbook():
     ws = wb.active
     ws.title = "Setup"
     ws.column_dimensions['A'].width = 35
-    ws.column_dimensions['B'].width = 100
+    ws.column_dimensions['B'].width = 50
     ws['A1'] = "YouTube Video URL:"
     ws['A1'].fill = PatternFill(start_color="FF0000", fill_type="solid")
     ws['A1'].font = Font(color="FFFFFF", bold=True)
@@ -22,6 +22,8 @@ def create_workbook():
     ws['A2'].fill = PatternFill(start_color="FF0000", fill_type="solid")
     ws['A2'].font = Font(color="FFFFFF", bold=True)
     ws['B2'] = "100"
+    ws['B1'].alignment = Alignment(horizontal="left")
+    ws['B2'].alignment = Alignment(horizontal="left")
     ws['A5'] = "INSTRUCTIONS"
     ws['A5'].fill = PatternFill(start_color="D0D0D0", fill_type="solid")
     ws['A5'].font = Font(bold=True)
