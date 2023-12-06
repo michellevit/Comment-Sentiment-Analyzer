@@ -10,16 +10,12 @@ import warnings
 
 
 # Use test data in development mode to avoid going over API call limit
-DEVELOPMENT_MODE = True 
+DEVELOPMENT_MODE = False 
+
 
 # CREDENTIALS (in .env file):
 load_dotenv()
 yt_api_key = os.getenv("YOUTUBE_API_KEY")
-
-
-# Avoid error messages in console: 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging
-tf.get_logger().setLevel('ERROR')  # Suppress deprecated function warnings
 
 
 def main():
@@ -159,33 +155,41 @@ def get_mock_yt_comments(wb, classifier):
 def get_yt_comments(youtube, yt_video_id, max_results, wb, classifier, token=""):
     try:
         row_number = 3
-        while max_results > 0:
+        while max_results > 0:  # Continue fetching comments until max_results is reached
+            # Set maxResults to the minimum of max_results or 100
             request = youtube.commentThreads().list(
                 part="snippet",
                 videoId=yt_video_id,
                 pageToken=token,
-                maxResults=100,
+                maxResults=min(max_results, 100), 
                 order="time", 
                 textFormat="plainText"
             )
             response = request.execute()
             for item in response.get("items", []):
                 top_comment = item["snippet"]["topLevelComment"]["snippet"]
-                sentiment = score_comment(top_comment["textDisplay"], classifier)
+                # Check if comment text is too long, and truncate or split if necessary
+                comment_text = top_comment["textDisplay"]
+                if len(comment_text) > 512:
+                    comment_text = comment_text[:512]  # Truncate to 512 characters
+                sentiment = score_comment(comment_text, classifier)
                 comment_data = {
                     "date": top_comment["publishedAt"][:10],
-                    "comment": top_comment["textDisplay"],
+                    "comment": comment_text,
                     "like_count": top_comment["likeCount"],
                     "username": top_comment["authorDisplayName"]
                 }
                 append_comment_to_sheet(wb, comment_data, sentiment)
                 row_number += 1
                 max_results -= 1
+                if max_results <= 0:
+                    break
             token = response.get("nextPageToken", None)
-            if not token:
+            if not token or max_results <= 0:
                 break 
     except Exception as e:
         print(f"Error fetching YouTube comments: {e}")
+
 
 
 def append_comment_to_sheet(wb, comment_data, sentiment):
