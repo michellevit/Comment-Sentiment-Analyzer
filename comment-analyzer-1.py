@@ -31,7 +31,7 @@ def create_workbook():
     ws.merge_cells('A9:B9')
     ws.merge_cells('A10:B10')
     ws['A6'] = "Step 1: Enter a YouTube URL into cell B1"
-    ws['A7'] = "Step 2: Adjust the B2 cell value to analyze more/less comments (Note: comment analysis takes ~3 seconds per comment)"
+    ws['A7'] = "Step 2: Adjust the B2 cell value to analyze more/less comments (note: comment analysis takes ~3 seconds per comment)"
     ws['A8'] = "Step 3: Save the file"
     ws['A9'] = "Step 4: Exit the file"
     ws['A10'] = "Step 5: Double-click the file 'run_script_2.bat'"

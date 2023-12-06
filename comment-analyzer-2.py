@@ -7,19 +7,16 @@ from transformers import TFAutoModelForSequenceClassification, RobertaTokenizer,
 from dotenv import load_dotenv
 import tensorflow as tf 
 import warnings
+from langdetect import detect
 
 
 # Use test data in development mode to avoid going over API call limit
-DEVELOPMENT_MODE = True 
+DEVELOPMENT_MODE = False 
+
 
 # CREDENTIALS (in .env file):
 load_dotenv()
 yt_api_key = os.getenv("YOUTUBE_API_KEY")
-
-
-# Avoid error messages in console: 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logging
-tf.get_logger().setLevel('ERROR')  # Suppress deprecated function warnings
 
 
 def main():
@@ -74,9 +71,14 @@ def main():
     # if not DEVELOPMENT_MODE:
     #     os.remove("YouTube-Comment-Analyzer-Setup.xlsx")
     total_comments = total_positive + total_neutral + total_negative
-    percent_positive = str(total_positive * 100 / total_comments) + "%"
-    percent_neutral = str(total_neutral * 100 / total_comments) + "%"
-    percent_negative = str(total_negative * 100 / total_comments) + "%"
+    if total_comments != 0:
+        percent_positive = "{:.1f}%".format(total_positive * 100 / total_comments)
+        percent_neutral = "{:.1f}%".format(total_neutral * 100 / total_comments)
+        percent_negative = "{:.1f}%".format(total_negative * 100 / total_comments)
+    else:
+        percent_positive = "0.0%"
+        percent_neutral = "0.0%"
+        percent_negative = "0.0%"
     prepare_overview_sheet(wb, yt_video_title, totals, percent_positive, percent_neutral, percent_negative)
     print("-----------------")
     print("Total Positive Comments: ", total_positive, " (", percent_positive, ")")
@@ -126,7 +128,6 @@ def prep_sentiment_ws(wb, yt_video_title, sheet_type):
         cell.font = Font(bold=True)
 
 
-
 def style_row(ws, row_num, sentiment):
     font_colors = {
         "Positive": "008000",
@@ -159,30 +160,42 @@ def get_mock_yt_comments(wb, classifier):
 def get_yt_comments(youtube, yt_video_id, max_results, wb, classifier, token=""):
     try:
         row_number = 3
-        while max_results > 0:
+        while max_results > 0:  # Continue fetching comments until max_results is reached
+            # Set maxResults to the minimum of max_results or 100
             request = youtube.commentThreads().list(
                 part="snippet",
                 videoId=yt_video_id,
                 pageToken=token,
-                maxResults=100,
+                maxResults=min(max_results, 100), 
                 order="time", 
                 textFormat="plainText"
             )
             response = request.execute()
             for item in response.get("items", []):
                 top_comment = item["snippet"]["topLevelComment"]["snippet"]
-                sentiment = score_comment(top_comment["textDisplay"], classifier)
+                comment_text = top_comment["textDisplay"]
+                if len(comment_text) > 512:
+                    comment_text = comment_text[:512] 
+                sentiment = score_comment(comment_text, classifier)
+                try:
+                    comment_language = detect(comment_text)
+                    if comment_language != 'en':
+                        continue  # Skip non-English comments
+                except:
+                    pass 
                 comment_data = {
                     "date": top_comment["publishedAt"][:10],
-                    "comment": top_comment["textDisplay"],
+                    "comment": comment_text,
                     "like_count": top_comment["likeCount"],
                     "username": top_comment["authorDisplayName"]
                 }
                 append_comment_to_sheet(wb, comment_data, sentiment)
                 row_number += 1
                 max_results -= 1
+                if max_results <= 0:
+                    break
             token = response.get("nextPageToken", None)
-            if not token:
+            if not token or max_results <= 0:
                 break 
     except Exception as e:
         print(f"Error fetching YouTube comments: {e}")
@@ -242,7 +255,7 @@ def prepare_overview_sheet(wb, yt_video_title, totals, percent_positive, percent
     ws['A1'].fill = PatternFill(start_color="FF0000", fill_type="solid")
     ws['A1'] = "YouTube Video:"
     ws['B1'] = yt_video_title
-    ws['A2'].fill = PatternFill(start_color="D0D0D0", fill_type="solid")
+    ws['A2'].fill = None
     ws['A2'].font = Font(color="000000", bold=True)
     ws['A2'] = "Comments Analyzed:"
     ws['B2'].alignment = Alignment(horizontal="center")
