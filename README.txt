@@ -95,7 +95,7 @@ In the installer, select the "C++ build tools" workload.
 
 - Double click the 'run_script_1.bat' file
   - Open the newly created 'YouTube-Comment-Analyzer-Setup.xlsx' file
-  - Enter the YouTube video link in the cell B1
+  - Enter the YouTube video link in the B1 cell
   - Adjust the B2 cell value to analyze more/less comments 
     * Note: comment analysis takes ~3 seconds per comment
   - Save and close the file
