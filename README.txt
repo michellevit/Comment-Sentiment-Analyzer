@@ -29,6 +29,7 @@ Libraries:
 - transformers
 - tensorflow
 - huggingface-hub
+- langdetect
 Other:
 - Google account
 - YouTube API key
@@ -73,6 +74,7 @@ In the installer, select the "C++ build tools" workload.
     pip install transformers
     pip install tensorflow
     pip install huggingface-hub
+    pip install langdetect
 - Open the 'env.txt' file in VSCode (or a text/code editor)
   - Fill in all the 'youtube_api_key' line
     - How to Get a YouTube API Key:
@@ -98,6 +100,8 @@ In the installer, select the "C++ build tools" workload.
 - Double click the 'run_script_2.bat' file
   - Once it is ready, it will be renamed: "YouTube-Comment-Analyzer-Complete.xlsx"
   * Note: on average this script takes 3 seconds per comment, so you may need to wait
+  * Note: replies to comments will not be recorded
+  * Note: only english comments will be recorded
 
 
 ----------
@@ -107,7 +111,10 @@ In the installer, select the "C++ build tools" workload.
 
 ----------
 6. FAQ
--This script can be modified to pull comments from reddit, but it requires some changes to be made to the 'comment-analyzer-2.py' file
+  - On average this script takes 3 seconds per comment, so you may need to wait
+  - Replies to comments will not be recorded
+  - Only english comments will be recorded
+
 
 ----------
 7. Credits

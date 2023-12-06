@@ -7,6 +7,8 @@ from transformers import TFAutoModelForSequenceClassification, RobertaTokenizer,
 from dotenv import load_dotenv
 import tensorflow as tf 
 import warnings
+from langdetect import detect
+
 
 
 # Use test data in development mode to avoid going over API call limit
@@ -70,9 +72,14 @@ def main():
     # if not DEVELOPMENT_MODE:
     #     os.remove("YouTube-Comment-Analyzer-Setup.xlsx")
     total_comments = total_positive + total_neutral + total_negative
-    percent_positive = str(total_positive * 100 / total_comments) + "%"
-    percent_neutral = str(total_neutral * 100 / total_comments) + "%"
-    percent_negative = str(total_negative * 100 / total_comments) + "%"
+    if total_comments != 0:
+        percent_positive = "{:.1f}%".format(total_positive * 100 / total_comments)
+        percent_neutral = "{:.1f}%".format(total_neutral * 100 / total_comments)
+        percent_negative = "{:.1f}%".format(total_negative * 100 / total_comments)
+    else:
+        percent_positive = "0.0%"
+        percent_neutral = "0.0%"
+        percent_negative = "0.0%"
     prepare_overview_sheet(wb, yt_video_title, totals, percent_positive, percent_neutral, percent_negative)
     print("-----------------")
     print("Total Positive Comments: ", total_positive, " (", percent_positive, ")")
@@ -168,11 +175,16 @@ def get_yt_comments(youtube, yt_video_id, max_results, wb, classifier, token="")
             response = request.execute()
             for item in response.get("items", []):
                 top_comment = item["snippet"]["topLevelComment"]["snippet"]
-                # Check if comment text is too long, and truncate or split if necessary
                 comment_text = top_comment["textDisplay"]
                 if len(comment_text) > 512:
-                    comment_text = comment_text[:512]  # Truncate to 512 characters
+                    comment_text = comment_text[:512] 
                 sentiment = score_comment(comment_text, classifier)
+                try:
+                    comment_language = detect(comment_text)
+                    if comment_language != 'en':
+                        continue  # Skip non-English comments
+                except:
+                    pass 
                 comment_data = {
                     "date": top_comment["publishedAt"][:10],
                     "comment": comment_text,
@@ -246,7 +258,7 @@ def prepare_overview_sheet(wb, yt_video_title, totals, percent_positive, percent
     ws['A1'].fill = PatternFill(start_color="FF0000", fill_type="solid")
     ws['A1'] = "YouTube Video:"
     ws['B1'] = yt_video_title
-    ws['A2'].fill = PatternFill(start_color="D0D0D0", fill_type="solid")
+    ws['A2'].fill = None
     ws['A2'].font = Font(color="000000", bold=True)
     ws['A2'] = "Comments Analyzed:"
     ws['B2'].alignment = Alignment(horizontal="center")
