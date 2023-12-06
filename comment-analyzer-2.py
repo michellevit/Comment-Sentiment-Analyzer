@@ -10,7 +10,6 @@ import warnings
 from langdetect import detect
 
 
-
 # Use test data in development mode to avoid going over API call limit
 DEVELOPMENT_MODE = False 
 
@@ -129,7 +128,6 @@ def prep_sentiment_ws(wb, yt_video_title, sheet_type):
         cell.font = Font(bold=True)
 
 
-
 def style_row(ws, row_num, sentiment):
     font_colors = {
         "Positive": "008000",
@@ -201,7 +199,6 @@ def get_yt_comments(youtube, yt_video_id, max_results, wb, classifier, token="")
                 break 
     except Exception as e:
         print(f"Error fetching YouTube comments: {e}")
-
 
 
 def append_comment_to_sheet(wb, comment_data, sentiment):
