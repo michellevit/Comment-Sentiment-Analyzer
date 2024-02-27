@@ -2,14 +2,10 @@
 
 
 ![Python](https://img.shields.io/badge/python-3.9-blue.svg)
-![Google API Client](https://img.shields.io/badge/googleapiclient-latest-green.svg)
-![openpyxl](https://img.shields.io/badge/openpyxl-latest-green.svg)
-![dotenv](https://img.shields.io/badge/dotenv-latest-green.svg)
-![Transformers](https://img.shields.io/badge/transformers-latest-blue.svg)
-![TensorFlow](https://img.shields.io/badge/tensorflow-latest-orange.svg)
-![Hugging Face Hub](https://img.shields.io/badge/huggingface--hub-latest-blue.svg)
-![LangDetect](https://img.shields.io/badge/langdetect-latest-green.svg)
-![YouTube API](https://img.shields.io/badge/YouTube%20API-Key-red.svg)
+![openpyxl](https://img.shields.io/badge/openpyxl-3.1.2-green.svg)
+![TensorFlow](https://img.shields.io/badge/tensorflow-2.15.0-orange.svg)
+![Hugging Face Hub](https://img.shields.io/badge/huggingface--hub-0.19.4-blue.svg)
+![YouTube API](https://img.shields.io/badge/YouTube%20API-v3-red.svg)
 
 
 This script intakes a YouTube video link, and outputs all of the video's YouTube comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). The sentiment analysis done by the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
@@ -29,14 +25,13 @@ This script intakes a YouTube video link, and outputs all of the video's YouTube
 ## Requirements<a name="requirements"></a>
 #### Libraries
 - Python 3.9
-- googleapiclient
-- openpyxl
-- os
-- dotenv
-- transformers
-- tensorflow
-- huggingface-hub
-- langdetect
+- googleapiclient 2.14.0
+- openpyxl 3.1.2
+- dotenv 1.0.0
+- transformers 4.35.2
+- tensorflow 2.15.0
+- huggingface-hub 0.19.4
+- langdetect 1.0.9
 #### Other:
 - Google account
 - YouTube API key
