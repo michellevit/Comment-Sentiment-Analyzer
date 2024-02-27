@@ -68,13 +68,13 @@ In the installer, select the "C++ build tools" workload.
   - Open a terminal
   - Activate the virtual environment, run `C:\Users\Michelle\.virtualenvs\Comment-Sentiment-Analyzer-Virtual-Env\Scripts\Activate.ps1`
   - Run: 
-    `pip install --upgrade google-api-python-client`
-    `pip install openpyxl`
-    `pip install python-dotenv`
-    `pip install transformers`
-    `pip install tensorflow`
-    `pip install huggingface-hub`
-    `pip install langdetect`
+    - `pip install --upgrade google-api-python-client`
+    - `pip install openpyxl`
+    - `pip install python-dotenv`
+    - `pip install transformers`
+    - `pip install tensorflow`
+    - `pip install huggingface-hub`
+    - `pip install langdetect`
 - Open the 'env.txt' file in VSCode (or a text/code editor)
   - Fill in all the 'youtube_api_key' line
     - How to Get a YouTube API Key:
