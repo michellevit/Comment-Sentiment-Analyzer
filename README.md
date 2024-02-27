@@ -66,7 +66,8 @@ In the installer, select the "C++ build tools" workload.
   - Run `python -m virtualenv Comment-Sentiment-Analyzer-Virtual-Env`
 - Install required libraries in virtual env
   - Open a terminal
-  - Activate the virtual environment, run `C:\Users\Michelle\.virtualenvs\Comment-Sentiment-Analyzer-Virtual-Env\Scripts\Activate.ps1`
+  - Activate the virtual environment"
+    - Run `C:\Users\Michelle\.virtualenvs\Comment-Sentiment-Analyzer-Virtual-Env\Scripts\Activate.ps1`
   - Run: 
     - `pip install --upgrade google-api-python-client`
     - `pip install openpyxl`
