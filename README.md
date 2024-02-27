@@ -2,9 +2,9 @@
 
 
 ![Python](https://img.shields.io/badge/python-3.9-blue.svg)
+![Hugging Face Hub](https://img.shields.io/badge/huggingface--hub-0.19.4-blue.svg)
 ![openpyxl](https://img.shields.io/badge/openpyxl-3.1.2-green.svg)
 ![TensorFlow](https://img.shields.io/badge/tensorflow-2.15.0-orange.svg)
-![Hugging Face Hub](https://img.shields.io/badge/huggingface--hub-0.19.4-blue.svg)
 ![YouTube API](https://img.shields.io/badge/YouTube%20API-v3-red.svg)
 
 
