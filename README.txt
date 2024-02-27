@@ -1,26 +1,33 @@
-Project Title: YouTube Comment Sentiment Analyzer
+# YouTube Comment Sentiment Analyzer
 
 
-----------
-Table of Contents: 
-1. Project Description
-2. Requirements
-3. Installation
-4. How to Run the Program
-5. Troubleshooting
-6. Credits
+![Python](https://img.shields.io/badge/python-3.9-blue.svg)
+![Google API Client](https://img.shields.io/badge/googleapiclient-latest-green.svg)
+![openpyxl](https://img.shields.io/badge/openpyxl-latest-green.svg)
+![dotenv](https://img.shields.io/badge/dotenv-latest-green.svg)
+![Transformers](https://img.shields.io/badge/transformers-latest-blue.svg)
+![TensorFlow](https://img.shields.io/badge/tensorflow-latest-orange.svg)
+![Hugging Face Hub](https://img.shields.io/badge/huggingface--hub-latest-blue.svg)
+![LangDetect](https://img.shields.io/badge/langdetect-latest-green.svg)
+![YouTube API](https://img.shields.io/badge/YouTube%20API-Key-red.svg)
 
 
-----------
-1. Project Description
-
-This Python script intakes a YouTube video link, and outputs all of the video's YouTube comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). The sentiment analysis done by the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
+This script intakes a YouTube video link, and outputs all of the video's YouTube comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). The sentiment analysis done by the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
 
 
-----------
-2. Requirements
+<a href="https://youtu.be/EcYErMu0cjQ?si=amhc2IIXkzyfaZeS" target="_blank"><img src="https://img.shields.io/badge/YouTube-Demo-red?style=for-the-badge&logo=youtube"></a>
 
-Libraries: 
+
+## Table of Contents
+- [Requirements](#requirements)
+- [How To Install](#how-to-install)
+- [How to Run](#how-to-run)
+- [Troubleshooting](#troubleshooting)
+- [Credits](#credits)
+
+
+## Requirements<a name="requirements"></a>
+#### Libraries
 - Python 3.9
 - googleapiclient
 - openpyxl
@@ -30,14 +37,12 @@ Libraries:
 - tensorflow
 - huggingface-hub
 - langdetect
-Other:
+#### Other:
 - Google account
 - YouTube API key
 
 
-----------
-3. Installation:
-
+## How To Install<a name="how-to-install"></a>
 - Download the repository from GitHub
   - Click the green 'Code' button
   - Click 'Download ZIP'
@@ -62,19 +67,19 @@ In the installer, select the "C++ build tools" workload.
   - Open a new terminal and navigate to folder you want to save your virtual env to
   - Make sure pip is installed (to check - run: python -m pip --version)
     - If pip is missing, download pip from the official source: https://bootstrap.pypa.io/get-pip.py 
-  - Run: python -m pip install virtualenv
-  - Run: python -m virtualenv Comment-Sentiment-Analyzer-Virtual-Env
+  - Run `python -m pip install virtualenv`
+  - Run `python -m virtualenv Comment-Sentiment-Analyzer-Virtual-Env`
 - Install required libraries in virtual env
   - Open a terminal
-  - Activate the virtual environment - run: C:\Users\Michelle\.virtualenvs\Comment-Sentiment-Analyzer-Virtual-Env\Scripts\Activate.ps1
+  - Activate the virtual environment, run `C:\Users\Michelle\.virtualenvs\Comment-Sentiment-Analyzer-Virtual-Env\Scripts\Activate.ps1`
   - Run: 
-    pip install --upgrade google-api-python-client
-    pip install openpyxl
-    pip install python-dotenv
-    pip install transformers
-    pip install tensorflow
-    pip install huggingface-hub
-    pip install langdetect
+    `pip install --upgrade google-api-python-client`
+    `pip install openpyxl`
+    `pip install python-dotenv`
+    `pip install transformers`
+    `pip install tensorflow`
+    `pip install huggingface-hub`
+    `pip install langdetect`
 - Open the 'env.txt' file in VSCode (or a text/code editor)
   - Fill in all the 'youtube_api_key' line
     - How to Get a YouTube API Key:
@@ -90,9 +95,7 @@ In the installer, select the "C++ build tools" workload.
   - Note: there are 2 paths per file which need to be updated
 
 
-----------
-4. How to Run the Program:
-
+## How To Run<a name="how-to-run"></a>
 - Double click the 'run_script_1.bat' file
   - Open the newly created 'YouTube-Comment-Analyzer-Setup.xlsx' file
   - Enter the YouTube video link in the B1 cell
@@ -106,15 +109,11 @@ In the installer, select the "C++ build tools" workload.
   * Note: the most recent comments will be returned first
 
 
-----------
-5. Troubleshooting: 
+## Troubleshooting<a name="troubleshooting"></a>
 - The excel files cannot be open while running the script
 - Comment analysis takes ~3 seconds per comment, so you may need to wait
 
 
-
-----------
-6. Credits
-
+## Credits<a name="credits"></a>
 Michelle Flandin
 
