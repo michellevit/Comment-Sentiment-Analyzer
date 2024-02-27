@@ -23,18 +23,18 @@ This script intakes a YouTube video link, and outputs all of the video's YouTube
 
 
 ## Requirements<a name="requirements"></a>
-#### Libraries
-- Python 3.9
-- googleapiclient 2.14.0
-- openpyxl 3.1.2
-- dotenv 1.0.0
-- transformers 4.35.2
-- tensorflow 2.15.0
-- huggingface-hub 0.19.4
-- langdetect 1.0.9
-#### Other:
-- Google account
-- YouTube API key
+- Libraries
+  - Python 3.9
+  - googleapiclient 2.14.0
+  - openpyxl 3.1.2
+  - dotenv 1.0.0
+  - transformers 4.35.2
+  - tensorflow 2.15.0
+  - huggingface-hub 0.19.4
+  - langdetect 1.0.9
+- Other:
+  - Google account
+  - YouTube API key
 
 
 ## How To Install<a name="how-to-install"></a>
