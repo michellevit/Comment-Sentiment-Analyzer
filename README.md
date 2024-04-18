@@ -1,11 +1,11 @@
 # YouTube Comment Sentiment Analyzer
 
 
-![Python](https://img.shields.io/badge/Python-3.9-blue.svg)
-![Hugging Face Hub](https://img.shields.io/badge/Hugging%20Face%20Hub-0.19.4-blue.svg)
-![openpyxl](https://img.shields.io/badge/OpenPyXL-3.1.2-green.svg)
-![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15.0-orange.svg)
-![YouTube API](https://img.shields.io/badge/YouTube%20API-v3-red.svg)
+![Python](https://img.shields.io/badge/Python-3.9-ffdb4f.svg)
+![Hugging Face Hub](https://img.shields.io/badge/Hugging%20Face%20Hub-0.19.4-ff9d00.svg)
+![openpyxl](https://img.shields.io/badge/OpenPyXL-3.1.2-217249.svg)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15.0-ed8e24.svg)
+![YouTube API](https://img.shields.io/badge/YouTube%20API-v3-ff0000.svg)
 
 
 This script intakes a YouTube video link, and outputs all of the video's YouTube comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). The sentiment analysis done by the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
