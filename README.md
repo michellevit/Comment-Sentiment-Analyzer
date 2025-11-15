@@ -1,28 +1,27 @@
 # YouTube Comment Sentiment Analyzer
 
-
 ![Python](https://img.shields.io/badge/Python-3.9-ffdb4f.svg)
 ![Hugging Face Hub](https://img.shields.io/badge/Hugging%20Face%20Hub-0.19.4-ff9d00.svg)
 ![openpyxl](https://img.shields.io/badge/OpenPyXL-3.1.2-217249.svg)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15.0-ed8e24.svg)
 ![YouTube API](https://img.shields.io/badge/YouTube%20API-v3-ff0000.svg)
 
-
 This script intakes a YouTube video link, and outputs all of the video's YouTube comments in an excel sheet, sorted by sentiment (i.e. Positive, Neutral, or Negative). The sentiment analysis done by the 'Hugging Face' cardiffnlp roBERTA-base language model, which was trained on ~58 million tweets.
-
 
 <a href="https://youtu.be/EcYErMu0cjQ?si=amhc2IIXkzyfaZeS" target="_blank"><img src="https://img.shields.io/badge/YouTube-Demo-red?style=for-the-badge&logo=youtube"></a>
 
+![Amazon Inventory Checker Demo](./csa-demo.gif)
 
 ## Table of Contents
+
 - [Requirements](#requirements)
 - [How To Install](#how-to-install)
 - [How to Run](#how-to-run)
 - [Troubleshooting](#troubleshooting)
 - [Credits](#credits)
 
-
 ## Requirements<a name="requirements"></a>
+
 - Libraries
   - Python 3.9
   - googleapiclient 2.14.0
@@ -36,8 +35,8 @@ This script intakes a YouTube video link, and outputs all of the video's YouTube
   - Google account
   - YouTube API key
 
-
 ## How To Install<a name="how-to-install"></a>
+
 - Download the repository from GitHub
   - Click the green 'Code' button
   - Click 'Download ZIP'
@@ -46,29 +45,22 @@ This script intakes a YouTube video link, and outputs all of the video's YouTube
   - If it does not work, make sure it is added to your system's PATH
   - Note: It must be version 3.9 for Tensorflow to work
 - Install Rust
-  - Download Visual Studio C++ Build Tools (pre-req for Rust)
-    - https://visualstudio.microsoft.com/downloads/
-    - Under "All downloads" > "Tools for Visual Studio 2019", find "Build Tools for Visual Studio 2019" and download it. (You can also choose a newer version if available.)
-    - Run the installer
-      - In the installer, select the "C++ build tools" workload
-      - Make sure to include the latest versions of MSVCv142 - VS 2019 C++ x64/x86 build tools and Windows 10 SDK
-      - Restart the computer
-In the installer, select the "C++ build tools" workload.
-    - https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  - Download Visual Studio C++ Build Tools (pre-req for Rust) - https://visualstudio.microsoft.com/downloads/ - Under "All downloads" > "Tools for Visual Studio 2019", find "Build Tools for Visual Studio 2019" and download it. (You can also choose a newer version if available.) - Run the installer - In the installer, select the "C++ build tools" workload - Make sure to include the latest versions of MSVCv142 - VS 2019 C++ x64/x86 build tools and Windows 10 SDK - Restart the computer
+    In the installer, select the "C++ build tools" workload. - https://visualstudio.microsoft.com/visual-cpp-build-tools/
   - https://www.rust-lang.org/learn/get-started
   - If it does not work, make sure it is added to your system's PATH
 - Create a Virtual environment
   - https://www.youtube.com/watch?v=APOPm01BVrk&ab_channel=CoreySchafer
   - Open a new terminal and navigate to folder you want to save your virtual env to
   - Make sure pip is installed (to check - run: python -m pip --version)
-    - If pip is missing, download pip from the official source: https://bootstrap.pypa.io/get-pip.py 
+    - If pip is missing, download pip from the official source: https://bootstrap.pypa.io/get-pip.py
   - Run `python -m pip install virtualenv`
   - Run `python -m virtualenv Comment-Sentiment-Analyzer-Virtual-Env`
 - Install required libraries in virtual env
   - Open a terminal
   - Activate the virtual environment"
     - Run `C:\Users\Michelle\.virtualenvs\Comment-Sentiment-Analyzer-Virtual-Env\Scripts\Activate.ps1`
-  - Run: 
+  - Run:
     - `pip install --upgrade google-api-python-client`
     - `pip install openpyxl`
     - `pip install python-dotenv`
@@ -87,16 +79,16 @@ In the installer, select the "C++ build tools" workload.
       - Create a credential
       - A screen will appear with the API key
   - Rename the 'env.txt' file to '.env' and save it
-- Update the file paths in 'run_script_1.bat' and 'run_script_2.bat' 
+- Update the file paths in 'run_script_1.bat' and 'run_script_2.bat'
   - Note: there are 2 paths per file which need to be updated
 
-
 ## How To Run<a name="how-to-run"></a>
+
 - Double click the 'run_script_1.bat' file
   - Open the newly created 'YouTube-Comment-Analyzer-Setup.xlsx' file
   - Enter the YouTube video link in the B1 cell
-  - Adjust the B2 cell value to analyze more/less comments 
-    * Note: comment analysis takes ~3 seconds per comment
+  - Adjust the B2 cell value to analyze more/less comments
+    - Note: comment analysis takes ~3 seconds per comment
   - Save and close the file
 - Double click the 'run_script_2.bat' file
   - Once it is ready, it will be renamed: "YouTube-Comment-Analyzer-Complete.xlsx"
@@ -104,12 +96,11 @@ In the installer, select the "C++ build tools" workload.
   * Note: only english comments will be recorded
   * Note: the most recent comments will be returned first
 
-
 ## Troubleshooting<a name="troubleshooting"></a>
+
 - The excel files cannot be open while running the script
 - Comment analysis takes ~3 seconds per comment, so you may need to wait
 
-
 ## Credits<a name="credits"></a>
-Michelle Flandin
 
+Michelle Flandin
