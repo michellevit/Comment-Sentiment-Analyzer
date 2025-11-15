@@ -10,7 +10,7 @@ This script intakes a YouTube video link, and outputs all of the video's YouTube
 
 <a href="https://youtu.be/EcYErMu0cjQ?si=amhc2IIXkzyfaZeS" target="_blank"><img src="https://img.shields.io/badge/YouTube-Demo-red?style=for-the-badge&logo=youtube"></a>
 
-![Amazon Inventory Checker Demo](assets/csa-demo.gif)
+![Comment Sentiment Analyzer Demo](assets/csa-demo.gif)
 
 ## Table of Contents
 
